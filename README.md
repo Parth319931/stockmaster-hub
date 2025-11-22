@@ -113,7 +113,9 @@ npm run dev
 
 The application runs locally at:
 
-http://localhost:5173
+
+
+http://localhost:8080/dashboard
 
 Default Test Credentials (sample)
 
