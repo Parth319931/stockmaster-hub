@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Plus, Search } from 'lucide-react';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Plus } from 'lucide-react';
+import { FilterBar } from '@/components/filters/FilterBar';
+import { useFilters } from '@/hooks/useFilters';
 import {
   Table,
   TableBody,
@@ -28,18 +29,60 @@ interface Product {
 const Products = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [categories, setCategories] = useState<string[]>([]);
+  const { search, setSearch, filters, updateFilter, clearFilters } = useFilters({
+    initialFilters: { category: null, status: null },
+  });
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+    fetchCategories();
+  }, [search, filters]);
 
-  const fetchProducts = async () => {
+  const fetchCategories = async () => {
     try {
       const { data, error } = await supabase
         .from('products')
+        .select('category')
+        .order('category');
+
+      if (error) throw error;
+      
+      const uniqueCategories = Array.from(
+        new Set((data || []).map((p) => p.category))
+      );
+      setCategories(uniqueCategories);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      let query = supabase
+        .from('products')
         .select('*')
         .order('name');
+
+      // Apply search filter
+      if (search.trim()) {
+        query = query.or(
+          `name.ilike.%${search.trim()}%,sku.ilike.%${search.trim()}%,category.ilike.%${search.trim()}%`
+        );
+      }
+
+      // Apply category filter
+      if (filters.category) {
+        query = query.eq('category', filters.category);
+      }
+
+      // Apply status filter
+      if (filters.status) {
+        query = query.eq('is_active', filters.status === 'active');
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setProducts(data || []);
@@ -49,13 +92,6 @@ const Products = () => {
       setLoading(false);
     }
   };
-
-  const filteredProducts = products.filter(
-    (product) =>
-      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.category.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   if (loading) {
     return (
@@ -82,17 +118,31 @@ const Products = () => {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by name, SKU, or category..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </div>
+          <FilterBar
+            searchValue={search}
+            onSearchChange={setSearch}
+            searchPlaceholder="Search by name, SKU, or category..."
+            filters={[
+              {
+                label: 'Category',
+                value: filters.category,
+                options: categories.map((cat) => ({ label: cat, value: cat })),
+                onChange: (value) => updateFilter('category', value),
+                placeholder: 'All Categories',
+              },
+              {
+                label: 'Status',
+                value: filters.status,
+                options: [
+                  { label: 'Active', value: 'active' },
+                  { label: 'Inactive', value: 'inactive' },
+                ],
+                onChange: (value) => updateFilter('status', value),
+                placeholder: 'All Status',
+              },
+            ]}
+            onClearFilters={clearFilters}
+          />
         </CardHeader>
         <CardContent>
           <Table>
@@ -108,14 +158,14 @@ const Products = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredProducts.length === 0 ? (
+              {products.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center text-muted-foreground">
                     No products found
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredProducts.map((product) => (
+                products.map((product) => (
                   <TableRow key={product.id}>
                     <TableCell className="font-medium">{product.sku}</TableCell>
                     <TableCell>{product.name}</TableCell>
