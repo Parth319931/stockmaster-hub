@@ -2,9 +2,13 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Plus } from 'lucide-react';
+import { Plus, FileText } from 'lucide-react';
 import { FilterBar } from '@/components/filters/FilterBar';
 import { useFilters } from '@/hooks/useFilters';
+import { LoadingPage } from '@/components/ui/loading-spinner';
+import { EmptyState } from '@/components/ui/empty-state';
+import { toast } from 'sonner';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Table,
   TableBody,
@@ -85,6 +89,7 @@ const Receipts = () => {
       setReceipts(data || []);
     } catch (error) {
       console.error('Error fetching receipts:', error);
+      toast.error('Failed to load receipts');
     } finally {
       setLoading(false);
     }
@@ -108,26 +113,31 @@ const Receipts = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <p className="text-muted-foreground">Loading receipts...</p>
-      </div>
-    );
+    return <LoadingPage message="Loading receipts..." />;
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Receipts</h2>
           <p className="text-muted-foreground">
             Manage incoming stock from suppliers
           </p>
         </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          New Receipt
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button className="shadow-sm">
+                <Plus className="mr-2 h-4 w-4" />
+                New Receipt
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Create a new receipt document</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
       <Card>
@@ -161,45 +171,55 @@ const Receipts = () => {
             onClearFilters={clearFilters}
           />
         </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Receipt #</TableHead>
-                <TableHead>Supplier</TableHead>
-                <TableHead>Warehouse</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Created</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {receipts.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground">
-                    No receipts found
-                  </TableCell>
-                </TableRow>
-              ) : (
-                receipts.map((receipt) => (
-                  <TableRow key={receipt.id}>
-                    <TableCell className="font-medium">
-                      {receipt.receipt_number}
-                    </TableCell>
-                    <TableCell>{receipt.supplier_name}</TableCell>
-                    <TableCell>{receipt.warehouses?.name || '-'}</TableCell>
-                    <TableCell>
-                      <Badge variant={getStatusBadgeVariant(receipt.status)}>
-                        {receipt.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {format(new Date(receipt.created_at), 'MMM dd, yyyy')}
-                    </TableCell>
+        <CardContent className="p-0">
+          {receipts.length === 0 ? (
+            <EmptyState
+              icon={FileText}
+              title="No receipts found"
+              description="Create your first receipt to track incoming inventory from suppliers."
+              action={{
+                label: 'New Receipt',
+                onClick: () => {},
+              }}
+            />
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="font-semibold">Receipt #</TableHead>
+                    <TableHead className="font-semibold">Supplier</TableHead>
+                    <TableHead className="font-semibold">Warehouse</TableHead>
+                    <TableHead className="font-semibold">Status</TableHead>
+                    <TableHead className="font-semibold">Created</TableHead>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                </TableHeader>
+                <TableBody>
+                  {receipts.map((receipt) => (
+                    <TableRow key={receipt.id} className="hover:bg-muted/50 transition-colors cursor-pointer">
+                      <TableCell className="font-mono text-sm font-medium">
+                        {receipt.receipt_number}
+                      </TableCell>
+                      <TableCell className="font-medium">{receipt.supplier_name}</TableCell>
+                      <TableCell>
+                        <span className="inline-flex items-center rounded-md bg-muted px-2 py-1 text-xs font-medium">
+                          {receipt.warehouses?.name || '-'}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={getStatusBadgeVariant(receipt.status)} className="font-medium">
+                          {receipt.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {format(new Date(receipt.created_at), 'MMM dd, yyyy')}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

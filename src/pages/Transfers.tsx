@@ -2,9 +2,13 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Plus } from 'lucide-react';
+import { Plus, ArrowLeftRight } from 'lucide-react';
 import { FilterBar } from '@/components/filters/FilterBar';
 import { useFilters } from '@/hooks/useFilters';
+import { LoadingPage } from '@/components/ui/loading-spinner';
+import { EmptyState } from '@/components/ui/empty-state';
+import { toast } from 'sonner';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Table,
   TableBody,
@@ -90,6 +94,7 @@ const Transfers = () => {
       setTransfers(data || []);
     } catch (error) {
       console.error('Error fetching transfers:', error);
+      toast.error('Failed to load transfers');
     } finally {
       setLoading(false);
     }
@@ -113,26 +118,31 @@ const Transfers = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <p className="text-muted-foreground">Loading transfers...</p>
-      </div>
-    );
+    return <LoadingPage message="Loading transfers..." />;
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Internal Transfers</h2>
           <p className="text-muted-foreground">
             Move stock between warehouses and locations
           </p>
         </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          New Transfer
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button className="shadow-sm">
+                <Plus className="mr-2 h-4 w-4" />
+                New Transfer
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Create a new transfer document</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
       <Card>
@@ -166,45 +176,59 @@ const Transfers = () => {
             onClearFilters={clearFilters}
           />
         </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Transfer #</TableHead>
-                <TableHead>From</TableHead>
-                <TableHead>To</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Created</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {transfers.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground">
-                    No transfers found
-                  </TableCell>
-                </TableRow>
-              ) : (
-                transfers.map((transfer) => (
-                  <TableRow key={transfer.id}>
-                    <TableCell className="font-medium">
-                      {transfer.transfer_number}
-                    </TableCell>
-                    <TableCell>{transfer.from_warehouse?.name || '-'}</TableCell>
-                    <TableCell>{transfer.to_warehouse?.name || '-'}</TableCell>
-                    <TableCell>
-                      <Badge variant={getStatusBadgeVariant(transfer.status)}>
-                        {transfer.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {format(new Date(transfer.created_at), 'MMM dd, yyyy')}
-                    </TableCell>
+        <CardContent className="p-0">
+          {transfers.length === 0 ? (
+            <EmptyState
+              icon={ArrowLeftRight}
+              title="No transfers found"
+              description="Create your first transfer to move stock between locations."
+              action={{
+                label: 'New Transfer',
+                onClick: () => {},
+              }}
+            />
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="font-semibold">Transfer #</TableHead>
+                    <TableHead className="font-semibold">From</TableHead>
+                    <TableHead className="font-semibold">To</TableHead>
+                    <TableHead className="font-semibold">Status</TableHead>
+                    <TableHead className="font-semibold">Created</TableHead>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                </TableHeader>
+                <TableBody>
+                  {transfers.map((transfer) => (
+                    <TableRow key={transfer.id} className="hover:bg-muted/50 transition-colors cursor-pointer">
+                      <TableCell className="font-mono text-sm font-medium">
+                        {transfer.transfer_number}
+                      </TableCell>
+                      <TableCell>
+                        <span className="inline-flex items-center rounded-md bg-muted px-2 py-1 text-xs font-medium">
+                          {transfer.from_warehouse?.name || '-'}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <span className="inline-flex items-center rounded-md bg-muted px-2 py-1 text-xs font-medium">
+                          {transfer.to_warehouse?.name || '-'}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={getStatusBadgeVariant(transfer.status)} className="font-medium">
+                          {transfer.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {format(new Date(transfer.created_at), 'MMM dd, yyyy')}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

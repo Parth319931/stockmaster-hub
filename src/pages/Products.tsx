@@ -2,9 +2,13 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Plus } from 'lucide-react';
+import { Plus, Package } from 'lucide-react';
 import { FilterBar } from '@/components/filters/FilterBar';
 import { useFilters } from '@/hooks/useFilters';
+import { LoadingPage } from '@/components/ui/loading-spinner';
+import { EmptyState } from '@/components/ui/empty-state';
+import { toast } from 'sonner';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Table,
   TableBody,
@@ -88,32 +92,38 @@ const Products = () => {
       setProducts(data || []);
     } catch (error) {
       console.error('Error fetching products:', error);
+      toast.error('Failed to load products');
     } finally {
       setLoading(false);
     }
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <p className="text-muted-foreground">Loading products...</p>
-      </div>
-    );
+    return <LoadingPage message="Loading products..." />;
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Products</h2>
           <p className="text-muted-foreground">
             Manage your product catalog and inventory levels
           </p>
         </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Product
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button className="shadow-sm">
+                <Plus className="mr-2 h-4 w-4" />
+                Add Product
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Create a new product</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
       <Card>
@@ -144,47 +154,57 @@ const Products = () => {
             onClearFilters={clearFilters}
           />
         </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>SKU</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>UOM</TableHead>
-                <TableHead>Reorder Level</TableHead>
-                <TableHead>Unit Cost</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {products.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground">
-                    No products found
-                  </TableCell>
-                </TableRow>
-              ) : (
-                products.map((product) => (
-                  <TableRow key={product.id}>
-                    <TableCell className="font-medium">{product.sku}</TableCell>
-                    <TableCell>{product.name}</TableCell>
-                    <TableCell>{product.category}</TableCell>
-                    <TableCell>{product.uom}</TableCell>
-                    <TableCell>{product.reorder_level}</TableCell>
-                    <TableCell>
-                      {product.unit_cost ? `$${product.unit_cost.toFixed(2)}` : '-'}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={product.is_active ? 'default' : 'secondary'}>
-                        {product.is_active ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </TableCell>
+        <CardContent className="p-0">
+          {products.length === 0 ? (
+            <EmptyState
+              icon={Package}
+              title="No products found"
+              description="Get started by creating your first product in the inventory system."
+              action={{
+                label: 'Add Product',
+                onClick: () => {},
+              }}
+            />
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="font-semibold">SKU</TableHead>
+                    <TableHead className="font-semibold">Name</TableHead>
+                    <TableHead className="font-semibold">Category</TableHead>
+                    <TableHead className="font-semibold">UOM</TableHead>
+                    <TableHead className="font-semibold">Reorder Level</TableHead>
+                    <TableHead className="font-semibold">Unit Cost</TableHead>
+                    <TableHead className="font-semibold">Status</TableHead>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                </TableHeader>
+                <TableBody>
+                  {products.map((product) => (
+                    <TableRow key={product.id} className="hover:bg-muted/50 transition-colors">
+                      <TableCell className="font-mono text-sm">{product.sku}</TableCell>
+                      <TableCell className="font-medium">{product.name}</TableCell>
+                      <TableCell>
+                        <span className="inline-flex items-center rounded-md bg-muted px-2 py-1 text-xs font-medium">
+                          {product.category}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{product.uom}</TableCell>
+                      <TableCell className="text-center">{product.reorder_level}</TableCell>
+                      <TableCell className="font-medium">
+                        {product.unit_cost ? `$${product.unit_cost.toFixed(2)}` : '-'}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={product.is_active ? 'default' : 'secondary'} className="font-medium">
+                          {product.is_active ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
