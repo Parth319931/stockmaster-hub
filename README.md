@@ -120,9 +120,9 @@ http://localhost:8080/dashboard
 Default Test Credentials (sample)
 
 Admin Account
-Email: admin@stockmaster.local
+Email: sujal.chaudhari23@spit.ac.in
 
-Password: Admin@123
+Password: 123456
 
 Project Directory Structure
 src/
@@ -148,8 +148,3 @@ License
 
 MIT License
 
-Contact
-
-For further queries, feature discussions or issue reports, contact:
-support@stockmaster.app
- (placeholder)
