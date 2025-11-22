@@ -702,6 +702,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_low_stock_count: { Args: never; Returns: number }
+      get_pending_deliveries_count: { Args: never; Returns: number }
+      get_pending_receipts_count: { Args: never; Returns: number }
+      get_pending_transfers_count: { Args: never; Returns: number }
+      get_total_products_count: { Args: never; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
