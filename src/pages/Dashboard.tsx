@@ -3,6 +3,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Package, AlertTriangle, ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { LoadingPage } from '@/components/ui/loading-spinner';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { toast } from 'sonner';
 
 interface KPIData {
   totalProducts: number;
@@ -31,11 +34,11 @@ const Dashboard = () => {
     try {
       // Call efficient backend functions for KPIs
       const [
-        { data: totalProducts },
-        { data: lowStockItems },
-        { data: pendingReceipts },
-        { data: pendingDeliveries },
-        { data: pendingTransfers }
+        { data: totalProducts, error: e1 },
+        { data: lowStockItems, error: e2 },
+        { data: pendingReceipts, error: e3 },
+        { data: pendingDeliveries, error: e4 },
+        { data: pendingTransfers, error: e5 }
       ] = await Promise.all([
         supabase.rpc('get_total_products_count'),
         supabase.rpc('get_low_stock_count'),
@@ -43,6 +46,11 @@ const Dashboard = () => {
         supabase.rpc('get_pending_deliveries_count'),
         supabase.rpc('get_pending_transfers_count')
       ]);
+
+      const errors = [e1, e2, e3, e4, e5].filter(Boolean);
+      if (errors.length > 0) {
+        throw new Error('Failed to fetch some KPI data');
+      }
 
       setKpiData({
         totalProducts: totalProducts || 0,
@@ -53,6 +61,7 @@ const Dashboard = () => {
       });
     } catch (error) {
       console.error('Error fetching KPI data:', error);
+      toast.error('Failed to load dashboard data');
     } finally {
       setLoading(false);
     }
@@ -92,47 +101,58 @@ const Dashboard = () => {
   ];
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <p className="text-muted-foreground">Loading dashboard...</p>
-      </div>
-    );
+    return <LoadingPage message="Loading dashboard..." />;
   }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-        <p className="text-muted-foreground">
-          Welcome back! Here's an overview of your inventory.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
+          <p className="text-muted-foreground">
+            Welcome back! Here's an overview of your inventory.
+          </p>
+        </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-        {kpiCards.map((kpi) => {
-          const Icon = kpi.icon;
-          return (
-            <Card key={kpi.title}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  {kpi.title}
-                </CardTitle>
-                <Icon className={`h-4 w-4 ${kpi.color}`} />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{kpi.value}</div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+      <TooltipProvider>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          {kpiCards.map((kpi) => {
+            const Icon = kpi.icon;
+            return (
+              <Tooltip key={kpi.title}>
+                <TooltipTrigger asChild>
+                  <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer border-l-4 hover:scale-105" style={{ borderLeftColor: `hsl(var(--${kpi.color.replace('text-', '')}))` }}>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">
+                        {kpi.title}
+                      </CardTitle>
+                      <div className={`p-2 rounded-full bg-${kpi.color.replace('text-', '')}/10`}>
+                        <Icon className={`h-5 w-5 ${kpi.color}`} />
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold">{kpi.value}</div>
+                    </CardContent>
+                  </Card>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>View {kpi.title.toLowerCase()} details</p>
+                </TooltipContent>
+              </Tooltip>
+            );
+          })}
+        </div>
+      </TooltipProvider>
 
-      <Card>
+      <Card className="border-dashed">
         <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            Quick Actions
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             Use the sidebar navigation to manage products, create receipts, deliveries, transfers, and adjustments.
           </p>
         </CardContent>

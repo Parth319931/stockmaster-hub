@@ -2,9 +2,13 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Plus } from 'lucide-react';
+import { Plus, ClipboardCheck } from 'lucide-react';
 import { FilterBar } from '@/components/filters/FilterBar';
 import { useFilters } from '@/hooks/useFilters';
+import { LoadingPage } from '@/components/ui/loading-spinner';
+import { EmptyState } from '@/components/ui/empty-state';
+import { toast } from 'sonner';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Table,
   TableBody,
@@ -85,6 +89,7 @@ const Adjustments = () => {
       setAdjustments(data || []);
     } catch (error) {
       console.error('Error fetching adjustments:', error);
+      toast.error('Failed to load adjustments');
     } finally {
       setLoading(false);
     }
@@ -108,26 +113,31 @@ const Adjustments = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <p className="text-muted-foreground">Loading adjustments...</p>
-      </div>
-    );
+    return <LoadingPage message="Loading adjustments..." />;
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Stock Adjustments</h2>
           <p className="text-muted-foreground">
             Correct inventory discrepancies
           </p>
         </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          New Adjustment
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button className="shadow-sm">
+                <Plus className="mr-2 h-4 w-4" />
+                New Adjustment
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Create a new stock adjustment</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
       <Card>
@@ -161,45 +171,55 @@ const Adjustments = () => {
             onClearFilters={clearFilters}
           />
         </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Adjustment #</TableHead>
-                <TableHead>Reason</TableHead>
-                <TableHead>Warehouse</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Created</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {adjustments.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground">
-                    No adjustments found
-                  </TableCell>
-                </TableRow>
-              ) : (
-                adjustments.map((adjustment) => (
-                  <TableRow key={adjustment.id}>
-                    <TableCell className="font-medium">
-                      {adjustment.adjustment_number}
-                    </TableCell>
-                    <TableCell>{adjustment.reason}</TableCell>
-                    <TableCell>{adjustment.warehouses?.name || '-'}</TableCell>
-                    <TableCell>
-                      <Badge variant={getStatusBadgeVariant(adjustment.status)}>
-                        {adjustment.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {format(new Date(adjustment.created_at), 'MMM dd, yyyy')}
-                    </TableCell>
+        <CardContent className="p-0">
+          {adjustments.length === 0 ? (
+            <EmptyState
+              icon={ClipboardCheck}
+              title="No adjustments found"
+              description="Create your first adjustment to correct inventory discrepancies."
+              action={{
+                label: 'New Adjustment',
+                onClick: () => {},
+              }}
+            />
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="font-semibold">Adjustment #</TableHead>
+                    <TableHead className="font-semibold">Reason</TableHead>
+                    <TableHead className="font-semibold">Warehouse</TableHead>
+                    <TableHead className="font-semibold">Status</TableHead>
+                    <TableHead className="font-semibold">Created</TableHead>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                </TableHeader>
+                <TableBody>
+                  {adjustments.map((adjustment) => (
+                    <TableRow key={adjustment.id} className="hover:bg-muted/50 transition-colors cursor-pointer">
+                      <TableCell className="font-mono text-sm font-medium">
+                        {adjustment.adjustment_number}
+                      </TableCell>
+                      <TableCell className="font-medium max-w-xs truncate">{adjustment.reason}</TableCell>
+                      <TableCell>
+                        <span className="inline-flex items-center rounded-md bg-muted px-2 py-1 text-xs font-medium">
+                          {adjustment.warehouses?.name || '-'}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={getStatusBadgeVariant(adjustment.status)} className="font-medium">
+                          {adjustment.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {format(new Date(adjustment.created_at), 'MMM dd, yyyy')}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
