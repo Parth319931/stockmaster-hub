@@ -711,6 +711,22 @@ export type Database = {
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      validate_adjustment: {
+        Args: { adjustment_id_param: string; validator_id: string }
+        Returns: undefined
+      }
+      validate_delivery: {
+        Args: { delivery_id_param: string; validator_id: string }
+        Returns: undefined
+      }
+      validate_receipt: {
+        Args: { receipt_id_param: string; validator_id: string }
+        Returns: undefined
+      }
+      validate_transfer: {
+        Args: { transfer_id_param: string; validator_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "manager" | "staff"
