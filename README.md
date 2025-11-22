@@ -1,73 +1,153 @@
-# Welcome to your Lovable project
+StockMaster – Inventory & Stock Management System
 
-## Project info
+StockMaster is a full-stack web-based Inventory and Warehouse Management System designed to manage stock levels, product details, warehouse transfers, receipts, deliveries, stock adjustments, and real-time dashboard reporting.
 
-**URL**: https://lovable.dev/projects/53b8b3eb-981a-4bae-a139-0f6b3471c6ca
+Features
 
-## How can I edit this code?
+Authentication
 
-There are several ways of editing your application.
+Secure login and logout system
 
-**Use Lovable**
+JWT-based authentication
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/53b8b3eb-981a-4bae-a139-0f6b3471c6ca) and start prompting.
+Role-based access control: Admin, Manager, Staff
 
-Changes made via Lovable will be committed automatically to this repo.
+Forgot-password and OTP email support
 
-**Use your preferred IDE**
+Dashboard
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+Displays real-time KPIs:
+• Total available products
+• Low stock item count
+• Pending receipts
+• Pending deliveries
+• Internal transfers
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+Filtering by document type, status, warehouse, category, search by SKU or name
 
-Follow these steps:
+Product and Stock Management
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+Create, update, view, and delete products
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+Track stock across multiple warehouses and rack-level locations
 
-# Step 3: Install the necessary dependencies.
-npm i
+Reorder alerts based on minimum stock threshold
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+Inventory Operations
+
+Receipts: handle incoming goods and increase quantity
+
+Delivery Orders: handle outgoing goods and decrease quantity
+
+Internal Transfers: move goods between locations or warehouses
+
+Stock Adjustments: correct mismatches in physical vs recorded quantity
+
+Stock Ledger
+
+Transaction log of every stock movement with reference document IDs and timestamps
+
+Technology Stack
+
+Frontend
+
+React
+
+TypeScript
+
+Vite
+
+Tailwind CSS
+
+shadcn-ui
+
+Backend
+
+Node.js
+
+Express.js
+
+REST API
+
+JWT authentication
+
+Database
+
+PostgreSQL
+
+Prisma ORM
+
+Installation and Setup
+
+Clone the repository:
+
+git clone <repository-url>
+
+
+Navigate into project directory:
+
+cd stockmaster
+
+
+Install dependencies:
+
+npm install
+
+
+Create environment file:
+
+cp .env.example .env
+
+
+Configure database credentials and authentication keys
+
+Run database migrations:
+
+npx prisma migrate dev
+
+
+Start development server:
+
 npm run dev
-```
 
-**Edit a file directly in GitHub**
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+The application runs locally at:
 
-**Use GitHub Codespaces**
+http://localhost:5173
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Default Test Credentials (sample)
 
-## What technologies are used for this project?
+Admin Account
+Email: admin@stockmaster.local
 
-This project is built with:
+Password: Admin@123
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+Project Directory Structure
+src/
+  components/
+  context/
+  pages/
+  api/
+  hooks/
+  lib/
+  styles/
 
-## How can I deploy this project?
+Deployment Options
 
-Simply open [Lovable](https://lovable.dev/projects/53b8b3eb-981a-4bae-a139-0f6b3471c6ca) and click on Share -> Publish.
+Frontend deployment: Vercel, Netlify
+Backend deployment: Railway, Render, AWS, Azure
 
-## Can I connect a custom domain to my Lovable project?
+Contributing
 
-Yes, you can!
+Contributions to improve functionality, UI/UX, documentation, or performance are welcome.
+For major changes, create a feature branch and open a discussion before merging.
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+License
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+MIT License
+
+Contact
+
+For further queries, feature discussions or issue reports, contact:
+support@stockmaster.app
+ (placeholder)
