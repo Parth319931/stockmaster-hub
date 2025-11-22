@@ -29,56 +29,27 @@ const Dashboard = () => {
 
   const fetchKPIData = async () => {
     try {
-      // Get total products
-      const { count: productsCount } = await supabase
-        .from('products')
-        .select('*', { count: 'exact', head: true })
-        .eq('is_active', true);
-
-      // Get low stock items
-      const { data: products } = await supabase
-        .from('products')
-        .select('id, reorder_level');
-
-      let lowStockCount = 0;
-      if (products) {
-        for (const product of products) {
-          const { data: stockLevels } = await supabase
-            .from('stock_levels')
-            .select('quantity')
-            .eq('product_id', product.id);
-
-          const totalQuantity = stockLevels?.reduce((sum, level) => sum + level.quantity, 0) || 0;
-          if (totalQuantity <= product.reorder_level) {
-            lowStockCount++;
-          }
-        }
-      }
-
-      // Get pending receipts
-      const { count: pendingReceiptsCount } = await supabase
-        .from('receipts')
-        .select('*', { count: 'exact', head: true })
-        .in('status', ['draft', 'waiting', 'ready']);
-
-      // Get pending deliveries
-      const { count: pendingDeliveriesCount } = await supabase
-        .from('deliveries')
-        .select('*', { count: 'exact', head: true })
-        .in('status', ['draft', 'waiting', 'ready']);
-
-      // Get pending transfers
-      const { count: pendingTransfersCount } = await supabase
-        .from('transfers')
-        .select('*', { count: 'exact', head: true })
-        .in('status', ['draft', 'waiting', 'ready']);
+      // Call efficient backend functions for KPIs
+      const [
+        { data: totalProducts },
+        { data: lowStockItems },
+        { data: pendingReceipts },
+        { data: pendingDeliveries },
+        { data: pendingTransfers }
+      ] = await Promise.all([
+        supabase.rpc('get_total_products_count'),
+        supabase.rpc('get_low_stock_count'),
+        supabase.rpc('get_pending_receipts_count'),
+        supabase.rpc('get_pending_deliveries_count'),
+        supabase.rpc('get_pending_transfers_count')
+      ]);
 
       setKpiData({
-        totalProducts: productsCount || 0,
-        lowStockItems: lowStockCount,
-        pendingReceipts: pendingReceiptsCount || 0,
-        pendingDeliveries: pendingDeliveriesCount || 0,
-        pendingTransfers: pendingTransfersCount || 0,
+        totalProducts: totalProducts || 0,
+        lowStockItems: lowStockItems || 0,
+        pendingReceipts: pendingReceipts || 0,
+        pendingDeliveries: pendingDeliveries || 0,
+        pendingTransfers: pendingTransfers || 0,
       });
     } catch (error) {
       console.error('Error fetching KPI data:', error);
